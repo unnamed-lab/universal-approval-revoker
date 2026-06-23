@@ -27,6 +27,9 @@ body {
   font-family: var(--font-sans, Arial, sans-serif);
 }
 
+/* ─── Wallet adapter & RainbowKit overrides ─── */
+
+/* Solana wallet adapter */
 .wallet-adapter-button {
   background-color: var(--accent) !important;
   border-radius: 8px !important;
@@ -43,4 +46,13 @@ body {
 .wallet-adapter-modal-wrapper {
   background: var(--card) !important;
   border: 1px solid var(--card-border) !important;
+}
+
+/* RainbowKit */
+[data-rk] .ju367v9p {
+  background: var(--accent) !important;
+}
+
+[data-rk] button {
+  font-family: inherit !important;
 }

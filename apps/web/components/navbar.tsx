@@ -1,6 +1,7 @@
 "use client";
 
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 
 export function Navbar() {
   return (
@@ -14,6 +15,7 @@ export function Navbar() {
         </div>
         <div className="flex items-center gap-2">
           <WalletMultiButton />
+          <ConnectButton chainStatus="none" showBalance={false} />
         </div>
       </div>
     </header>
