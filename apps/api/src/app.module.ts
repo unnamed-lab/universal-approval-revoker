@@ -3,6 +3,7 @@ import { ConfigModule } from "@nestjs/config";
 import { ScanModule } from "./scan/scan.module";
 import { ProgramsModule } from "./programs/programs.module";
 import { MetadataModule } from "./metadata/metadata.module";
+import { EvmModule } from "./evm/evm.module";
 
 @Module({
   imports: [
@@ -10,6 +11,7 @@ import { MetadataModule } from "./metadata/metadata.module";
     ScanModule,
     ProgramsModule,
     MetadataModule,
+    EvmModule,
   ],
 })
 export class AppModule {}
