@@ -10,7 +10,7 @@ export function ScanStats({ approvals }: Props) {
   const lowRiskCount = approvals.filter((a) => a.risk.level === "low").length;
 
   return (
-    <div className="grid grid-cols-3 gap-3">
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
       <StatCard
         label="High Risk"
         count={highRiskCount}

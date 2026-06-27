@@ -14,6 +14,7 @@ import { wagmiConfig } from "@/lib/evm/config";
 import { ApprovalCard } from "./approval-card";
 import { ChainTabs, type ChainFilter } from "./chain-tabs";
 import { ScanStats } from "./scan-stats";
+import { ScanSkeleton } from "./scan-skeleton";
 import { EvmRevokeModal } from "./evm/evm-revoke-modal";
 import { EvmProgress, type RevokeProgress } from "./evm/evm-progress";
 
@@ -392,7 +393,19 @@ export function Scanner() {
         </div>
       )}
 
+      {scanning && approvals.length === 0 && <ScanSkeleton count={4} />}
+
       {evmProgress && <EvmProgress progress={evmProgress} />}
+
+      {batchRevoking && !evmProgress && (
+        <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] p-4 flex items-center gap-3 text-sm text-slate-300">
+          <svg className="h-5 w-5 animate-spin text-[var(--accent)]" viewBox="0 0 24 24" fill="none">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+          </svg>
+          <span>Revoking selected approvals…</span>
+        </div>
+      )}
 
       {approvals.length === 0 && !scanning && !scanError && hasScanned && (
         <div className="rounded-xl border border-green-500/20 bg-green-500/5 p-8 text-center">
@@ -414,7 +427,9 @@ export function Scanner() {
 
       {approvals.length > 0 && (
         <>
-          <ScanStats approvals={approvals} />
+          <div className="mb-8">
+            <ScanStats approvals={approvals} />
+          </div>
 
           {/* Chain tabs + batch controls */}
           <div className="flex flex-wrap items-center gap-2 justify-between">
@@ -454,14 +469,15 @@ export function Scanner() {
 
           {/* Approval list */}
           <div className="space-y-3">
-            {filteredApprovals.map((a) => (
-              <ApprovalCard
-                key={a.id}
-                approval={a}
-                selected={selected.has(a.id)}
-                onSelect={(checked) => toggleSelect(a.id, checked)}
-                onRevoke={() => handleSingleRevoke(a)}
-              />
+            {filteredApprovals.map((a, i) => (
+              <div key={a.id} className="animate-fade-in" style={{ animationDelay: `${i * 0.03}s` }}>
+                <ApprovalCard
+                  approval={a}
+                  selected={selected.has(a.id)}
+                  onSelect={(checked) => toggleSelect(a.id, checked)}
+                  onRevoke={() => handleSingleRevoke(a)}
+                />
+              </div>
             ))}
           </div>
         </>
