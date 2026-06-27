@@ -2,13 +2,11 @@
 
 import {
   type Address,
+  type WalletClient,
+  type PublicClient,
   encodeFunctionData,
-  encodeAbiParameters,
-  parseAbiParameters,
-  concat,
 } from "viem";
-import type { WalletClient, PublicClient } from "wagmi";
-import { type Approval } from "@uar/shared";
+import type { Approval } from "@uar/shared";
 import { api } from "../api";
 
 /* ─── Constants ─── */
@@ -100,6 +98,8 @@ export async function evmBatchRevoke(
 ): Promise<EvmRevokeResult[]> {
   if (approvals.length === 0) return [];
 
+  if (!walletClient.account) throw new Error("Wallet not connected");
+  const account = walletClient.account;
   const results: EvmRevokeResult[] = [];
 
   // 1. Check permit support for each approval
@@ -150,18 +150,35 @@ export async function evmBatchRevoke(
 
     onProgress?.("Submitting batch revoke transaction…");
 
-    // Multicall3 aggregate selector
-    const AGGREGATE_SELECTOR = "0x252dba42"; // keccak256("aggregate((address,bytes)[])")
+    const AGGREGATE_ABI = [
+      {
+        type: "function",
+        name: "aggregate",
+        inputs: [
+          {
+            type: "tuple(address,bytes)[]",
+            components: [
+              { type: "address", name: "target" },
+              { type: "bytes", name: "callData" },
+            ],
+          },
+        ],
+        outputs: [
+          { type: "uint256", name: "blockNumber" },
+          { type: "bytes[]", name: "returnData" },
+        ],
+      },
+    ] as const;
 
     const txHash = await walletClient.sendTransaction({
+      account,
+      chain: undefined,
       to: MULTICALL3_ADDRESS,
-      data: concat([
-        AGGREGATE_SELECTOR as `0x${string}`,
-        encodeAbiParameters(
-          parseAbiParameters("tuple(address target, bytes callData)[]"),
-          [calls],
-        ),
-      ]),
+      data: encodeFunctionData({
+        abi: AGGREGATE_ABI,
+        functionName: "aggregate",
+        args: [calls],
+      }),
     });
 
     onProgress?.("Confirming batch transaction…");
@@ -183,6 +200,8 @@ export async function evmBatchRevoke(
     );
 
     const txHash = await walletClient.sendTransaction({
+      account,
+      chain: undefined,
       to: approval.tokenAddress as Address,
       data: encodeFunctionData({
         abi: APPROVE_FRAGMENT,
@@ -214,6 +233,7 @@ async function signPermitRevoke(
   tokenName: string,
   chainId: number,
 ): Promise<PermitSignature & { deadline: bigint }> {
+  if (!walletClient.account) throw new Error("Wallet not connected");
   // Get current nonce
   const nonce = await publicClient.readContract({
     address: tokenAddress,
@@ -242,6 +262,7 @@ async function signPermitRevoke(
   const deadline = BigInt(Math.floor(Date.now() / 1000) + 3600); // +1 hour
 
   const signature = await walletClient.signTypedData({
+    account: walletClient.account,
     domain: {
       name,
       version: "1",

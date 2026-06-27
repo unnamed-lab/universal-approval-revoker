@@ -7,6 +7,7 @@ allowBuilds:
   bigint-buffer: true
   blake-hash: true
   bufferutil: true
+  keccak: true
   protobufjs: true
   sharp: true
   tiny-secp256k1: true

@@ -4,7 +4,7 @@ import { useState, useCallback, useMemo } from "react";
 import { useWallet, useConnection } from "@solana/wallet-adapter-react";
 import { useAccount, useWalletClient, useSwitchChain } from "wagmi";
 import { getPublicClient } from "wagmi/actions";
-import { encodeFunctionData, type Address } from "viem";
+import { encodeFunctionData, type Address, type PublicClient } from "viem";
 import type { Approval } from "@uar/shared";
 import { api } from "@/lib/api";
 import { batchRevoke, singleRevoke, type FeeConfig, type RevokeTarget } from "@/lib/solana/revoke";
@@ -195,15 +195,16 @@ export function Scanner() {
       if (!walletClient || !evmAddress) return [];
 
       const currentChain = evmChainId;
-      if (currentChain !== chainId) {
+      const targetChainId = chainId as 1 | 8453 | 42161;
+      if (currentChain !== targetChainId) {
         try {
-          await switchChainAsync({ chainId });
+          await switchChainAsync({ chainId: targetChainId });
         } catch {
           return [];
         }
       }
 
-      const publicClient = getPublicClient(wagmiConfig, { chainId })!;
+      const publicClient = getPublicClient(wagmiConfig, { chainId: targetChainId }) as PublicClient;
 
       const results = await evmBatchRevoke(
         walletClient,
