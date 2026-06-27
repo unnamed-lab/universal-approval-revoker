@@ -24,7 +24,9 @@ export class ScanService {
     private readonly config: ConfigService,
     private readonly metadata: MetadataService,
   ) {
-    const rpcUrl = this.config.getOrThrow<string>("HELIUS_RPC_URL");
+    const rpcUrl =
+      this.config.get<string>("SOLANA_RPC_URL") ??
+      "https://api.mainnet-beta.solana.com";
     this.connection = new Connection(rpcUrl, "confirmed");
   }
 
