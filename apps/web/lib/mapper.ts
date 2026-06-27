@@ -20,7 +20,7 @@ export function toApproval(d: TokenDelegation): Approval {
     tokenAddress: d.mint,
     metadata: d.metadata,
     risk: d.risk,
-    solana: { tokenProgram: d.tokenProgram },
+    solana: { tokenAccount: d.tokenAccount, tokenProgram: d.tokenProgram },
   };
 }
 

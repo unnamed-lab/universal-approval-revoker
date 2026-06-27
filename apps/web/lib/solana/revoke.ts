@@ -10,10 +10,13 @@ import {
   TOKEN_PROGRAM_ID,
   TOKEN_2022_PROGRAM_ID,
 } from "@solana/spl-token";
-import type { TokenDelegation } from "@uar/shared";
-
 /** Max revokes to pack into a single transaction before splitting. */
 const BATCH_SIZE = 10;
+
+export interface RevokeTarget {
+  tokenAccount: string;
+  tokenProgram: "spl-token" | "spl-token-2022";
+}
 
 export interface RevokeResult {
   signature: string;
@@ -33,19 +36,17 @@ export interface FeeConfig {
 }
 
 /**
- * Builds and sends one or more transactions to revoke all provided delegations.
+ * Builds and sends one or more transactions to revoke all provided targets.
  * Each transaction holds up to BATCH_SIZE Revoke instructions.
- * If feeConfig is provided, a SOL transfer to the treasury is bundled into
- * each batch transaction (no additional signature required).
  */
 export async function batchRevoke(
   connection: Connection,
   owner: PublicKey,
-  delegations: TokenDelegation[],
+  targets: RevokeTarget[],
   sendTransaction: (tx: Transaction, connection: Connection) => Promise<string>,
   feeConfig?: FeeConfig | null,
 ): Promise<RevokeResult[]> {
-  if (delegations.length === 0) return [];
+  if (targets.length === 0) return [];
 
   const results: RevokeResult[] = [];
   const { blockhash, lastValidBlockHeight } =
@@ -55,11 +56,10 @@ export async function batchRevoke(
     ? new PublicKey(feeConfig.treasuryAddress)
     : null;
 
-  for (let i = 0; i < delegations.length; i += BATCH_SIZE) {
-    const batch = delegations.slice(i, i + BATCH_SIZE);
+  for (let i = 0; i < targets.length; i += BATCH_SIZE) {
+    const batch = targets.slice(i, i + BATCH_SIZE);
     const tx = new Transaction({ recentBlockhash: blockhash, feePayer: owner });
 
-    // Fee instruction first — user sees the total debit upfront in wallet UI
     if (treasury && feeConfig && feeConfig.lamports > 0) {
       tx.add(
         SystemProgram.transfer({
@@ -70,14 +70,14 @@ export async function batchRevoke(
       );
     }
 
-    for (const delegation of batch) {
+    for (const target of batch) {
       const tokenProgramId =
-        delegation.tokenProgram === "spl-token-2022"
+        target.tokenProgram === "spl-token-2022"
           ? TOKEN_2022_PROGRAM_ID
           : TOKEN_PROGRAM_ID;
 
       const instruction: TransactionInstruction = createRevokeInstruction(
-        new PublicKey(delegation.tokenAccount),
+        new PublicKey(target.tokenAccount),
         owner,
         [],
         tokenProgramId,
@@ -94,7 +94,7 @@ export async function batchRevoke(
 
     results.push({
       signature,
-      revokedAccounts: batch.map((d) => d.tokenAccount),
+      revokedAccounts: batch.map((t) => t.tokenAccount),
     });
   }
 
@@ -102,15 +102,14 @@ export async function batchRevoke(
 }
 
 /**
- * Revoke a single delegation. No fee is charged for single revokes —
- * only batch revokes carry the convenience fee.
+ * Revoke a single target.
  */
 export async function singleRevoke(
   connection: Connection,
   owner: PublicKey,
-  delegation: TokenDelegation,
+  target: RevokeTarget,
   sendTransaction: (tx: Transaction, connection: Connection) => Promise<string>,
 ): Promise<RevokeResult> {
-  const [result] = await batchRevoke(connection, owner, [delegation], sendTransaction);
+  const [result] = await batchRevoke(connection, owner, [target], sendTransaction);
   return result!;
 }

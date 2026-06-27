@@ -1,27 +1,31 @@
-import type { ScanResponse } from "@uar/shared";
+import type { Approval } from "@uar/shared";
 
 interface Props {
-  data: ScanResponse;
+  approvals: Approval[];
 }
 
-export function ScanStats({ data }: Props) {
+export function ScanStats({ approvals }: Props) {
+  const highRiskCount = approvals.filter((a) => a.risk.level === "high").length;
+  const mediumRiskCount = approvals.filter((a) => a.risk.level === "medium").length;
+  const lowRiskCount = approvals.filter((a) => a.risk.level === "low").length;
+
   return (
     <div className="grid grid-cols-3 gap-3">
       <StatCard
         label="High Risk"
-        count={data.highRiskCount}
+        count={highRiskCount}
         color="text-red-400"
         bg="bg-red-500/10 border-red-500/20"
       />
       <StatCard
         label="Medium Risk"
-        count={data.mediumRiskCount}
+        count={mediumRiskCount}
         color="text-yellow-400"
         bg="bg-yellow-500/10 border-yellow-500/20"
       />
       <StatCard
         label="Safe"
-        count={data.lowRiskCount}
+        count={lowRiskCount}
         color="text-green-400"
         bg="bg-green-500/10 border-green-500/20"
       />

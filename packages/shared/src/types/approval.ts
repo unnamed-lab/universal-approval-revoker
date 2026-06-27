@@ -31,6 +31,7 @@ export interface Approval {
 
   /** Solana-specific fields */
   solana?: {
+    tokenAccount: string;
     tokenProgram: "spl-token" | "spl-token-2022";
   };
   /** EVM-specific fields */
